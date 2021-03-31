@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources: 
+  #vpc
+  TestVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: test-VPC
+        - Key: Purpose
+          Value: test
+  #IGW
+  TestIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: test-InternetGateway
+        - Key: Purpose
+          Value: test
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref TestVPC
+      InternetGatewayId: !Ref TestIGW
+  #subnet
+  TestPublicSubNet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref TestVPC
+      CidrBlock: 10.0.0.0/20
+      AvailabilityZone: 'ap-northeast-1a'
+      Tags:
+        - Key: Name
+          Value: testSubnet
+        - Key: Purpose
+          Value: test
+  #route-table
+  TestRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref TestVPC
+      Tags:
+        - Key: Name
+          Value: testRouteTable
+        - Key: Purpose
+          Value: test
+  SubnetAttache: 
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref TestRouteTable
+      SubnetId: !Ref TestPublicSubNet
+  TestRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref  TestRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref TestIGW
