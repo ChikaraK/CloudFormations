@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  #vpc
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-VPC
+  #InternetGateWay
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-InternetGateway
+        - Key: env
+          Value: stg
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref IGW
+  #subnet
+  SubnetA:
+    Description: This is private subnet
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.16.0/24
+      AvailabilityZone: 'ap-northeast-1a'
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}Subnet
+        - Key: Env
+          Value: stg
+  SubnetB:
+    Description: This is public subnet
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.32.0/24
+      AvailabilityZone: 'ap-northeast-1a'
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}Subnet
+        - Key: Env
+          Value: stg
+  #route-table
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: RouteTable
+        - Key: Env
+          Value: stg
+  SubnetAttache: 
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetA
+  Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref IGW
+Outputs:
+  OutputVPC:
+    Value: !Ref VPC
+    Export:
+      Name: 01-network:VPC
+  OutputSubnetA:
+    Value: !Ref SubnetA
+    Export:
+      Name: 01-network:SubnetA
+  OutputSubnetB:
+    Value: !Ref SubnetB
+    Export:
+      Name: 01-network:SubnetB

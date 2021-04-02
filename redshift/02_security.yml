@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  DatabasePort: 
+    Description: The port that Redshift will listen on and that will be allowed through the Security Group.
+    Type: String
+    Default: 5439
+Resources: 
+  SecurityGroupA:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !ImportValue 01-network:VPC
+      GroupDescription: Security group
+      SecurityGroupIngress:
+      - CidrIp: 10.0.0.0/0
+        FromPort: !Ref DatabasePort
+        ToPort: !Ref DatabasePort
+        IpProtocol: tcp
+Outputs:
+  OutputSecurityGroupA:
+    Value: !Ref SecurityGroupA
+    Export:
+      Name: 02-security:SecurityGroupA

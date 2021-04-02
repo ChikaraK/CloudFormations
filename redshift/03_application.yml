@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  #Redshift-Parameters:start
+  ClusterMasterUsername:
+    Description: The user name associated with the master user account for the redshift cluster that is being created
+    Type: String
+    AllowedPattern: '([a-z])([a-z]|[0-9])*'
+    ConstraintDescription : must start with a-z and contain only a-z or 0-9.
+  ClusterMasterPassword: 
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern : '[a-zA-Z0-9]*'
+  ClusterType:
+    Description: The type of the cluster
+    Type: String
+    Default: single-node
+    AllowedValues: [ single-node, multi-node ]
+    ConstraintDescription : must be single-node or multi-node.
+  NumberOfNodes:
+    Description: 'The nuber of compute nodes in the redshift cluster.  When cluster type is specified as: 1) single-node, the NumberOfNodes parameter should be specified as 1, 2) multi-node, the NumberOfNodes parameter should be greater than 1'
+    Type: Number
+    Default: 1  
+  NodeType:
+    Description: The node type to be provisioned for the redshift cluster
+    Type: String
+    Default: dc2.large
+    AllowedValues : [dc2.large, dw1.xlarge, dw1.8xlarge, dw2.large, dw2.8xlarge ]
+    ConstraintDescription : must be a valid RedShift node type.
+  DatabasePort: 
+    Description: The port that Redshift will listen on and that will be allowed through the Security Group.
+    Type: String
+    Default: 5439
+  #Redshift-Parameters:end
+Conditions:
+ IsMultiNodeCluster: !Equals
+  - !Ref ClusterType
+  - 'multi-node'
+Resources:
+  #RedshiftCluster
+  RedshiftCluster: 
+    Type: AWS::Redshift::Cluster
+    Properties:
+      DBName: "andact"
+      Port: !Ref DatabasePort
+      MasterUsername: !Ref ClusterMasterUsername
+      MasterUserPassword: !Ref ClusterMasterPassword
+      NodeType: !Ref NodeType
+      NumberOfNodes: !If
+        - IsMultiNodeCluster
+        - !Ref NumberOfNodes
+        - !Ref 'AWS::NoValue'
+      ClusterType: !Ref ClusterType
+      ClusterSubnetGroupName: !Ref RedshiftClusterSubnetGroup
+      VpcSecurityGroupIds: [!ImportValue 02-security:SecurityGroupA]
+      Tags:
+        - Key: env
+          Value: stg
+  RedshiftClusterSubnetGroup: 
+    Type: AWS::Redshift::ClusterSubnetGroup
+    Properties: 
+      Description: "Cluster subnet group"
+      SubnetIds: [!ImportValue 01-network:SubnetA]
